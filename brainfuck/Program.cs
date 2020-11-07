@@ -47,31 +47,38 @@ namespace brainfuck
 
     internal class Brainfuck
     {
-        private readonly Cell[] _cells = Enumerable.Range(1, 300000).Select(_ => new Cell()).ToArray();
+        private readonly Cell[] _cells = Enumerable.Range(1, 30000).Select(_ => new Cell()).ToArray();
         private int _current;
 
         public void Read(string bf)
         {
             var loopDepth = 0;
             var loopCode = "";
-            for (var i = 0; i < bf.Length; i++)
+            foreach (var t in bf)
             {
                 if (loopDepth > 0)
                 {
-                    if (bf[i] == ']')
+                    if (t == ']')
                     {
                         loopDepth--;
-                        Loop(loopCode);
-                        loopCode = "";
+                        if (loopDepth == 0)
+                        {
+                            Loop(loopCode);
+                            loopCode = "";
+                            continue;
+                        }
                     }
-                    else
+
+                    if (t == '[')
                     {
-                        loopCode += bf[i];
+                        loopDepth++;
                     }
+
+                    loopCode += t;
                 }
                 else
                 {
-                    switch (bf[i])
+                    switch (t)
                     {
                         case '+':
                             IncrementCurrent();
@@ -101,14 +108,7 @@ namespace brainfuck
 
         private void IncrementCurrent()
         {
-            try
-            {
-                _cells[_current].Increment();
-            }
-            catch (IndexOutOfRangeException)
-            {
-                Console.WriteLine(_current);
-            }
+            _cells[_current].Increment();
         }
 
         private void DecrementCurrent()
