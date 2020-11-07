@@ -17,6 +17,13 @@ namespace brainfuck
                     new Brainfuck().Read(f);
                 }
             }
+            else
+            {
+                for (string line; (line = Console.In.ReadLine()) != null; )
+                {
+                    new Brainfuck().Read(line);
+                }
+            }
         }
     }
 
