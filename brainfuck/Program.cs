@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 
 namespace brainfuck
@@ -7,13 +8,19 @@ namespace brainfuck
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-            var a = Convert.ToChar(Console.Read());
-            Console.WriteLine(a);
+            if (args.Any())
+            {
+                var filePath = args[0];
+                if (File.Exists(filePath))
+                {
+                    var f = File.OpenText(filePath).ReadToEnd();
+                    new Brainfuck().Read(f);
+                }
+            }
         }
     }
 
-    class Cell
+    internal class Cell
     {
         public byte Value;
 
@@ -38,82 +45,100 @@ namespace brainfuck
         }
     }
 
-    class Brainfuck
+    internal class Brainfuck
     {
-        private Cell[] Cells = Enumerable.Repeat(new Cell(), 30000).ToArray();
-
-        private int _current = 0;
+        private readonly Cell[] _cells = Enumerable.Range(1, 300000).Select(_ => new Cell()).ToArray();
+        private int _current;
 
         public void Read(string bf)
         {
-            var loop = false;
-            var loopBf = "";
+            var loopDepth = 0;
+            var loopCode = "";
             for (var i = 0; i < bf.Length; i++)
             {
-                switch (bf[i])
+                if (loopDepth > 0)
                 {
-                    case '+':
-                        IncrementCurrent();
-                        break;
-                    case '-':
-                        DecrementCurrent();
-                        break;
-                    case '>':
-                        Increment();
-                        break;
-                    case '<':
-                        Decrement();
-                        break;
-                    case '.':
-                        Print();
-                        break;
-                    case ',':
-                        Input();
-                        break;
-                    case '[':
-                        loop = true;
-                        break;
-                    case ']':
-                        loop = false;
-                        
-                        break;
+                    if (bf[i] == ']')
+                    {
+                        loopDepth--;
+                        Loop(loopCode);
+                        loopCode = "";
+                    }
+                    else
+                    {
+                        loopCode += bf[i];
+                    }
+                }
+                else
+                {
+                    switch (bf[i])
+                    {
+                        case '+':
+                            IncrementCurrent();
+                            break;
+                        case '-':
+                            DecrementCurrent();
+                            break;
+                        case '>':
+                            Increment();
+                            break;
+                        case '<':
+                            Decrement();
+                            break;
+                        case '.':
+                            Print();
+                            break;
+                        case ',':
+                            Input();
+                            break;
+                        case '[':
+                            loopDepth++;
+                            break;
+                    }
                 }
             }
         }
 
-        public void IncrementCurrent()
+        private void IncrementCurrent()
         {
-            Cells[_current].Increment();
+            try
+            {
+                _cells[_current].Increment();
+            }
+            catch (IndexOutOfRangeException)
+            {
+                Console.WriteLine(_current);
+            }
         }
 
-        public void DecrementCurrent()
+        private void DecrementCurrent()
         {
-            Cells[_current].Decrement();
+            _cells[_current].Decrement();
         }
 
-        public void Increment()
+        private void Increment()
         {
             _current++;
         }
 
-        public void Decrement()
+        private void Decrement()
         {
             _current--;
         }
 
-        public void Print()
+        private void Print()
         {
-            Cells[_current].Print();
+            _cells[_current].Print();
         }
 
-        public void Input()
+        private void Input()
         {
-            Cells[_current].Set(Convert.ToByte(Console.Read()));
+            _cells[_current].Set(Convert.ToByte(Console.Read()));
         }
 
-        public void Loop(string bf)
-        { 
-            while (Cells[_current].Value != 0)
+        private void Loop(string bf)
+        {
+            while (_cells[_current].Value != 0)
             {
                 Read(bf);
             }
